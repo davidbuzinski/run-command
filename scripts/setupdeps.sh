@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RMC_BASE_URL='https://ssd.mathworks.com/supportfiles/ci/run-matlab-command/v2'
+RMC_BASE_URL='https://mw-ci-static-dev.s3.amazonaws.com/run-matlab-command/experimental'
 SUPPORTED_OS=('win64' 'maci64' 'maca64' 'glnxa64')
 
 # Create dist directory if it doesn't already exist
@@ -10,9 +10,6 @@ mkdir -p $DISTDIR
 # Download and extract in a temporary directory
 WORKINGDIR=$(mktemp -d -t rmc_build.XXXXXX)
 cd $WORKINGDIR
-
-wget -O  "$WORKINGDIR/license.txt" "$RMC_BASE_URL/license.txt"
-wget -O  "$WORKINGDIR/thirdpartylicenses.txt" "$RMC_BASE_URL/thirdpartylicenses.txt"
 
 for os in ${SUPPORTED_OS[@]}
 do
