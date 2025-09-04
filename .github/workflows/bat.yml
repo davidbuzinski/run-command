@@ -1,5 +1,7 @@
 name: Build and Test
 on: [push]
+permissions:
+  contents: read
 
 jobs:
   bat:
@@ -12,10 +14,20 @@ jobs:
           node-version: 20
       - name: Perform npm tasks
         run: npm run ci
-
-      - name: Perform 'setup-matlab'
-        uses: matlab-actions/setup-matlab@v2
-
+      - uses: actions/upload-artifact@v4
+        with:
+          name: built-action
+          path: |
+            **/*
+            !node_modules/
+  integ:
+    needs: bat
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+    steps:
       - name: Greet the world in style
         uses: ./
         with:
@@ -101,4 +113,3 @@ jobs:
         uses: ./
         with:
           command: exp = 'true', act = getenv('MW_BATCH_LICENSING_ONLINE'), assert(strcmp(act, exp), strjoin({act exp}, '\n'));
-
