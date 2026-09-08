@@ -17,6 +17,7 @@ async function run() {
     const generateSummary = core.getBooleanInput("generate-summary");
 
     const helperScript = await matlab.generateScript(workspaceDir, command);
+    let matlabError = "";
     const execOpts = {
         env: {
             ...process.env,
@@ -24,33 +25,38 @@ async function run() {
             MW_MATLAB_BUILDTOOL_DEFAULT_PLUGINS_FCN_OVERRIDE: "buildframework.getDefaultPlugins",
             MW_INPUT_GENERATE_SUMMARY: String(generateSummary),
         },
+        listeners: {
+            stderr: (data: Buffer) => {
+                matlabError += data.toString();
+            },
+        },
     };
-    await matlab
-        .runCommand(
+    try {
+        await matlab.runCommand(
             helperScript,
             platform,
             architecture,
             (cmd: string, args?: string[]) => exec.exec(cmd, args, execOpts),
             startupOpts,
-        )
-        .finally(() => {
-            if (generateSummary) {
-                const runnerTemp = process.env.RUNNER_TEMP || "";
-                const runId = process.env.GITHUB_RUN_ID || "";
-                const actionName = process.env.GITHUB_ACTION || "";
+        );
+    } catch {
+        core.setFailed(matlabError.trim() || "MATLAB command returned a nonzero exit code.");
+    } finally {
+        if (generateSummary) {
+            const runnerTemp = process.env.RUNNER_TEMP || "";
+            const runId = process.env.GITHUB_RUN_ID || "";
+            const actionName = process.env.GITHUB_ACTION || "";
 
-                buildSummary.processAndAddBuildSummary(runnerTemp, actionName);
-                testResultsSummary.processAndAddTestSummary(
-                    runnerTemp,
-                    runId,
-                    actionName,
-                    workspaceDir,
-                );
-                core.summary.write();
-            }
-        });
+            buildSummary.processAndAddBuildSummary(runnerTemp, actionName);
+            testResultsSummary.processAndAddTestSummary(
+                runnerTemp,
+                runId,
+                actionName,
+                workspaceDir,
+            );
+            core.summary.write();
+        }
+    }
 }
 
-run().catch((e) => {
-    core.setFailed(e);
-});
+run();
