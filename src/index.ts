@@ -17,18 +17,12 @@ async function run() {
     const generateSummary = core.getBooleanInput("generate-summary");
 
     const helperScript = await matlab.generateScript(workspaceDir, command);
-    let matlabError = "";
     const execOpts = {
         env: {
             ...process.env,
             MW_BATCH_LICENSING_ONLINE: "true", // Remove when online batch licensing is the default
             MW_MATLAB_BUILDTOOL_DEFAULT_PLUGINS_FCN_OVERRIDE: "buildframework.getDefaultPlugins",
             MW_INPUT_GENERATE_SUMMARY: String(generateSummary),
-        },
-        listeners: {
-            stderr: (data: Buffer) => {
-                matlabError += data.toString();
-            },
         },
     };
     try {
@@ -40,7 +34,7 @@ async function run() {
             startupOpts,
         );
     } catch {
-        core.setFailed(matlabError.trim() || "MATLAB command returned a nonzero exit code.");
+        core.setFailed("MATLAB command returned a nonzero exit code.");
     } finally {
         if (generateSummary) {
             const runnerTemp = process.env.RUNNER_TEMP || "";
